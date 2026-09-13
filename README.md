@@ -1,20 +1,24 @@
 # Secure Login System
 
-A secure web authentication system built with Python, Flask, Bcrypt, and SQLite for the Thiranex B.Tech IT cybersecurity project track.
+A secure web authentication system built with Python, Flask, Bcrypt, and SQLite, incorporating backend security best practices.
 
 ---
 
-## Security Features
+## Security Implementation Features
 
-- **Bcrypt Password Hashing:** User passwords are never stored in plain text; salted Bcrypt hashes are generated before DB persistence.
-- **SQL Injection Prevention:** All database operations utilize parameterized queries (`?` placeholders) to prevent SQLi vectors.
-- **Session State Management:** Protected routes are guarded by cryptographic cookie-backed user sessions (`flask.session`).
-- **Input Sanitization & Authentication:** Enforces input presence and handles duplicate account registrations securely.
+- **Input Validation & Sanitization:** Enforces length constraints, character rules, and presence checks for request payloads.
+- **Bcrypt Password Hashing:** User credentials are secured using salted Bcrypt hashing before storage.
+- **Environment Variable Isolation (`dotenv`):** Sensitive application secrets and ports are kept in `.env` and untracked in Git.
+- **SQL Injection Prevention:** Uses parameterized SQL queries (`?` placeholders) for all database operations.
+- **Session Management:** Handles user login states using secure cookie-backed sessions.
 
 ---
 
-## Installation & Setup
+## Setup & Running
 
-1. **Install required packages:**
+1. **Install Dependencies:**
    ```bash
-   py -m pip install flask flask-bcrypt
+   py -m pip install flask flask-bcrypt python-dotenv
+
+2. **Bash**
+   py app.py

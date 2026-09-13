@@ -1,15 +1,21 @@
+import os
 import sqlite3
+import re
 from flask import Flask, render_template_string, request, redirect, url_for, session, flash
 from flask_bcrypt import Bcrypt
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "super_secret_secure_key_change_in_production"
+app.secret_key = os.getenv("SECRET_KEY", "default_fallback_secret_key")
 bcrypt = Bcrypt(app)
 
 DB_NAME = "users.db"
 
 def init_db():
-    """Creates the users table using parameterized schema definition."""
+    """Parameterized database schema creation."""
     with sqlite3.connect(DB_NAME) as conn:
         cursor = conn.cursor()
         cursor.execute('''
@@ -23,7 +29,18 @@ def init_db():
 
 init_db()
 
-# HTML Templates embedded for single-file deployment
+def validate_input(username, password):
+    """Input Validation & Sanitization based on security standards."""
+    if not username or not password:
+        return False, "Username and password cannot be empty."
+    if len(username) < 3 or len(username) > 30:
+        return False, "Username must be between 3 and 30 characters."
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not re.match(r"^[a-zA-Z0-9_]+$", username):
+        return False, "Username can only contain letters, numbers, and underscores."
+    return True, ""
+
 LOGIN_HTML = '''
 <!DOCTYPE html>
 <html>
@@ -31,7 +48,7 @@ LOGIN_HTML = '''
     <title>Secure Login System</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 40px; display: flex; justify-content: center; }
-        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 320px; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 340px; }
         h2 { text-align: center; color: #333; }
         input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         button { width: 100%; background: #007bff; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
@@ -84,7 +101,7 @@ DASHBOARD_HTML = '''
 <body>
     <div class="container">
         <h1>Welcome, {{ username }}!</h1>
-        <p>You have securely logged in with session token validation.</p>
+        <p>Authenticated using Bcrypt hashing, parameterized queries, and environment secrets.</p>
         <br><br>
         <a href="/logout" class="btn-logout">Logout</a>
     </div>
@@ -104,11 +121,12 @@ def register():
         username = request.form['username'].strip()
         password = request.form['password']
 
-        if not username or not password:
-            flash("Username and password are required.")
+        is_valid, msg = validate_input(username, password)
+        if not is_valid:
+            flash(msg)
             return render_template_string(LOGIN_HTML, title="Register", action="/register")
 
-        # Bcrypt Password Hashing
+        # Bcrypt Hashing with Salt Rounds
         pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 
         try:
@@ -137,7 +155,6 @@ def login():
             user = cursor.fetchone()
 
         if user and bcrypt.check_password_hash(user[0], password):
-            # Secure Session Assignment
             session['user'] = username
             return redirect(url_for('dashboard'))
         else:
@@ -157,4 +174,5 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.getenv("PORT", 5000))
+    app.run(debug=True, port=port)

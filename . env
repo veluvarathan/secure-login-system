@@ -1,0 +1,2 @@
+SECRET_KEY=super_secret_secure_key_2026_production
+PORT=5000
